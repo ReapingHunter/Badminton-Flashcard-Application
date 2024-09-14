@@ -122,7 +122,14 @@ export default function HomeScreen() {
           <Text style={styles.pageNum}>{currentIndex + 1} / {cards.length}</Text>
         </View>
         <View style={styles.flashcard}>
-          <Text style={styles.questionText}>{cards[currentIndex].question}</Text>
+        <TouchableOpacity onPress={flipCard}>
+            <Animated.View style={[styles.flipCard, { transform: [{ rotateY: frontInterpolate }] }]}>
+              <Text style={styles.questionText}>{cards[currentIndex].question}</Text>
+            </Animated.View>
+            <Animated.View style={[styles.flipCard, styles.flipCardBack, { transform: [{ rotateY: backInterpolate }] }]}>
+              <Text style={styles.answerText}>{cards[currentIndex].answer}</Text>
+            </Animated.View>
+          </TouchableOpacity>
         </View>
         <View style={styles.horizontalLine} />
         <View style={styles.actions}>
@@ -189,10 +196,31 @@ const styles = StyleSheet.create({
     elevation: 5,
     margin: 10,
   },
+  flipCard: {
+    backgroundColor: "white",
+    backfaceVisibility: "hidden",
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    height: "100%",
+    width: "100%",
+    elevation: 5,
+  },
+  flipCardBack: {
+    position: "absolute",
+    top: 0,
+    backfaceVisibility: "hidden",
+  },
   questionText: {
     fontSize: 18,
     textAlign: 'center',
     margin: 10,
+  },
+  answerText: {
+    fontSize: 18,
+    textAlign: 'center',
+    margin: 10,
+    color: '#d9534f',
   },
   actions: {
     height: "20%",
