@@ -1,12 +1,8 @@
-import { StyleSheet, Text, View, StatusBar, Button, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, StatusBar, Button, Pressable, PanResponder, Animated } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useRef, useState } from 'react';
 
-type FlashcardData = [{
-  question: string,
-  answer: string,
-}]
-
-const data : FlashcardData = [
+const data = [
   {
     question: "A stroke made on the nonracquet side of the body",
     answer: "Backhand",
@@ -48,9 +44,28 @@ const data : FlashcardData = [
     answer: "1992",
   }
 ]
+
 export default function HomeScreen() {
+  const [index, setIndex] = useState(0)
+  const [showAnswer, setShowAnswer] = useState(false)
+
+  const handleSwipe = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        return Math.abs(gestureState.dx) > 20
+      },
+      onPanResponderRelease: (evt, gestureState) => {
+        if (gestureState.dx > 50) {
+          setIndex(prevIndex => (prevIndex > 0 ? prevIndex - 1 : data.length - 1))
+        } else if (gestureState.dx < -50) {
+          setIndex(prevIndex => (prevIndex < data.length - 1 ? prevIndex + 1 : 0))
+        }
+        setShowAnswer(false)
+      },
+    })
+  ).current
+
   return (
-    
     <View style={styles.body}>
       <StatusBar 
         backgroundColor="#000000"
@@ -61,19 +76,21 @@ export default function HomeScreen() {
       </View>
       <View style={styles.container}>
         <View style={styles.page}>
-            <Text style={styles.pageNum}>1 / 149</Text>
+            <Text style={styles.pageNum}>{index + 1} / {data.length}</Text>
         </View>
-        <View style={styles.flashcard}>
-          <Text>Hello World</Text>
+        <View {...handleSwipe.panHandlers} >
+          <Pressable onPress={() => {setShowAnswer(!showAnswer)}} style={styles.flashcard}>
+            <Text>{!showAnswer ? data[index].question : data[index].answer}</Text>
+          </Pressable>
         </View>
         <View style={styles.horizontalLine} />
         <View style={styles.actions}>
-          <TouchableOpacity style={styles.iconButton}>
+          <Pressable style={styles.iconButton}>
             <Ionicons name="play" size={60} color={"white"}/>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
+          </Pressable>
+          <Pressable style={styles.iconButton}>
             <Ionicons name="shuffle" size={60} color={"white"}/>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
     </View>
@@ -114,7 +131,7 @@ const styles = StyleSheet.create({
     color: "#2f2f2f"
   },
   container: {
-    backgroundColor: "#dedede",
+    backgroundColor: "#ffffff",
     flex: 1,
     flexDirection: "column",
     width: "100%",
@@ -123,13 +140,17 @@ const styles = StyleSheet.create({
   },
   flashcard: {
     backgroundColor: "white",
-    height: "40%",
-    width: "80%",
+    height: 280,
+    width: 335,
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 10,
-    elevation: 5,
+    elevation: 8,
     margin: 10,
+    borderStyle: "solid",
+    borderColor: "#3e752b",
+    borderWidth: 5,
+    padding: 20,
   },
   actions: {
     height: "20%",
@@ -150,6 +171,10 @@ const styles = StyleSheet.create({
     width: '80%',
     height: 0.75,
     backgroundColor: '#9c9c9c',
-    marginVertical: 10,
+    marginVertical: 20,
   },
+  flashcardContainer: {
+    width: "100%",
+    alignItems: "center",
+  }
 });
