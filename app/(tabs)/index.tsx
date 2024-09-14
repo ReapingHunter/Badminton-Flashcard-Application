@@ -63,10 +63,10 @@ export default function HomeScreen() {
       </View>
       <View style={styles.container}>
         <View style={styles.page}>
-            <Text style={styles.pageNum}>1 / 149</Text>
+          <Text style={styles.pageNum}>{currentIndex + 1} / {cards.length}</Text>
         </View>
         <View style={styles.flashcard}>
-          <Text>Hello World</Text>
+          <Text style={styles.questionText}>{cards[currentIndex].question}</Text>
         </View>
         <View style={styles.horizontalLine} />
         <View style={styles.actions}>
@@ -131,6 +131,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 10,
     elevation: 5,
+    margin: 10,
+  },
+  questionText: {
+    fontSize: 18,
+    textAlign: 'center',
     margin: 10,
   },
   actions: {
