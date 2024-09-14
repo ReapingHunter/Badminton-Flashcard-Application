@@ -24,6 +24,45 @@ export default function HomeScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);      // Current flashcard index
   const [isPlaying, setIsPlaying] = useState(false);        // Controls autoplay
 
+  const [showAnswer, setShowAnswer] = useState(false);      // Tracks whether answer is shown
+  
+  // Animated value for flip
+  const flipAnim = useRef(new Animated.Value(0)).current;
+  const flipToFront = useRef(true); // Keeps track of flip direction
+
+  // Interpolations for flip animations
+  const frontInterpolate = flipAnim.interpolate({
+    inputRange: [0, 180],
+    outputRange: ['0deg', '180deg'],
+  });
+  const backInterpolate = flipAnim.interpolate({
+    inputRange: [0, 180],
+    outputRange: ['180deg', '360deg'],
+  });
+
+  // Flip animation function
+  const flipCard = () => {
+    if (flipToFront.current) {
+      Animated.timing(flipAnim, {
+        toValue: 180,
+        duration: 500,
+        useNativeDriver: true,
+      }).start(() => {
+        flipToFront.current = false;
+        setShowAnswer(true);
+      });
+    } else {
+      Animated.timing(flipAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }).start(() => {
+        flipToFront.current = true;
+        setShowAnswer(false);
+      });
+    }
+  };
+
   // Shuffle function (Fisher-Yates algorithm)
   const shuffleCards = () => {
   const shuffled = [...cards];
