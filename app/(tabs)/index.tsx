@@ -78,12 +78,28 @@ export default function HomeScreen() {
   // Autoplay functionality
   useEffect(() => {
     let interval: NodeJS.Timeout;
+    let flipTimeout: NodeJS.Timeout;
+  
     if (isPlaying) {
+      // Initially, show the question for 2 seconds
+      flipTimeout = setTimeout(() => {
+        flipCard(); // Flip to show the answer
+      }, 2000); // Show question for 2 seconds
+  
+      // Move to the next card after 4 seconds (2 seconds for question, 2 for answer)
       interval = setInterval(() => {
-        setCurrentIndex((prevIndex) => (prevIndex + 1) % cards.length); // Loop back to start
-      }, 2000); // Autoplay interval (2 seconds)
+        flipCard(); // Flip back to question first
+        setTimeout(() => {
+          setCurrentIndex((prevIndex) => (prevIndex + 1) % cards.length); // Move to the next card
+          setShowAnswer(false); // Ensure the next card starts on the question face
+        }, 500); // Delay before showing the new card
+      }, 4000); // Autoplay interval (4 seconds total)
     }
-    return () => clearInterval(interval); // Cleanup on unmount or when autoplay stops
+
+      return () => {
+        clearInterval(interval); // Cleanup interval
+        clearTimeout(flipTimeout); // Cleanup timeout for flipping
+    };
   }, [isPlaying, cards]);
 
   // Autoplay toggle
