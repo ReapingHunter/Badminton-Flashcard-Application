@@ -72,6 +72,7 @@ export default function HomeScreen() {
     }
     setCards(shuffled);
     setCurrentIndex(0); // Reset to first card after shuffle
+    setShowAnswer(false); // Reset to question side
   };
 
   // Autoplay functionality
