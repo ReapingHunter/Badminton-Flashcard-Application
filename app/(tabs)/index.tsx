@@ -20,6 +20,20 @@ const data : FlashcardData = [
   {question: "Badminton became an olympic sport in what year?",answer: "1992"}
 ]
 export default function HomeScreen() {
+  const [cards, setCards] = useState<FlashcardData>(data);  // Holds flashcard data
+  const [currentIndex, setCurrentIndex] = useState(0);      // Current flashcard index
+
+  // Shuffle function (Fisher-Yates algorithm)
+  const shuffleCards = () => {
+  const shuffled = [...cards];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    setCards(shuffled);
+    setCurrentIndex(0); // Reset to first card after shuffle
+  };
+
   return (
     
     <View style={styles.body}>
