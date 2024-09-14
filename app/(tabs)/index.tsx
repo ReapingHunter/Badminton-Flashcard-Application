@@ -56,7 +56,7 @@ export default function HomeScreen() {
           <TouchableOpacity style={styles.iconButton}>
             <Ionicons name="play" size={60} color={"white"}/>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
+          <TouchableOpacity style={styles.iconButton} onPress={shuffleCards}>
             <Ionicons name="shuffle" size={60} color={"white"}/>
           </TouchableOpacity>
         </View>
