@@ -22,6 +22,7 @@ const data : FlashcardData = [
 export default function HomeScreen() {
   const [cards, setCards] = useState<FlashcardData>(data);  // Holds flashcard data
   const [currentIndex, setCurrentIndex] = useState(0);      // Current flashcard index
+  const [isPlaying, setIsPlaying] = useState(false);        // Controls autoplay
 
   // Shuffle function (Fisher-Yates algorithm)
   const shuffleCards = () => {
@@ -32,6 +33,22 @@ export default function HomeScreen() {
     }
     setCards(shuffled);
     setCurrentIndex(0); // Reset to first card after shuffle
+  };
+
+  // Autoplay functionality
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isPlaying) {
+      interval = setInterval(() => {
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % cards.length); // Loop back to start
+      }, 2000); // Autoplay interval (2 seconds)
+    }
+    return () => clearInterval(interval); // Cleanup on unmount or when autoplay stops
+  }, [isPlaying, cards]);
+
+  // Autoplay toggle
+  const toggleAutoplay = () => {
+    setIsPlaying((prev) => !prev);
   };
 
   return (
