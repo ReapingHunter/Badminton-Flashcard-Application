@@ -2,52 +2,22 @@ import React, {useState, useEffect} from 'react';
 import { StyleSheet, Text, View, StatusBar, Button, TouchableOpacity } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
-type FlashcardData = [{
+type FlashcardData = {
   question: string,
   answer: string,
-}]
+}[];
 
 const data : FlashcardData = [
-  {
-    question: "A stroke made on the nonracquet side of the body",
-    answer: "Backhand",
-  },
-  {
-    question: "Any infraction of the rules which results in the loss of a serve or in a point for the server",
-    answer: "Fault",
-  },
-  {
-    question: "The object which is volleyed back and forth over the net",
-    answer: "Shuttlecock",
-  },
-  {
-    question: "An overhead stroke hit downward with great velocity and angle",
-    answer: "Smash",
-  },
-  {
-    question: "If the shuttle hits the net and still lands in the proper court is it a Legal or Illegal serve?",
-    answer: "Legal",
-  },
-  {
-    question: "When is the serve in singles made from the right service court?",
-    answer: "When the server's score is an even number",
-  },
-  {
-    question: "What are the 5 basic groups of shots?",
-    answer: "serves, clears, smash, blocks, drop shots",
-  },
-  {
-    question: "What is the mid-line separating the service courts?",
-    answer: "Center line",
-  },
-  {
-    question: "A high, deep serve landing near the long service line in doubles or back boundary line in singles",
-    answer: "Long Serve",
-  },
-  {
-    question: "Badminton became an olympic sport in what year?",
-    answer: "1992",
-  }
+  {question: "A stroke made on the nonracquet side of the body", answer: "Backhand"},
+  {question: "Any infraction of the rules which results in the loss of a serve or in a point for the server", answer: "Fault"},
+  {question: "The object which is volleyed back and forth over the net", answer: "Shuttlecock"},
+  {question: "An overhead stroke hit downward with great velocity and angle", answer: "Smash"},
+  {question: "If the shuttle hits the net and still lands in the proper court is it a Legal or Illegal serve?", answer: "Legal"},
+  {question: "When is the serve in singles made from the right service court?", answer: "When the server's score is an even number"},
+  {question: "What are the 5 basic groups of shots?", answer: "serves, clears, smash, blocks, drop shots"},
+  {question: "What is the mid-line separating the service courts?", answer: "Center line"},
+  {question: "A high, deep serve landing near the long service line in doubles or back boundary line in singles", answer: "Long Serve",},
+  {question: "Badminton became an olympic sport in what year?",answer: "1992"}
 ]
 export default function HomeScreen() {
   return (
