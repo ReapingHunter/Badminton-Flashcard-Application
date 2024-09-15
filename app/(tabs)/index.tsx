@@ -117,14 +117,17 @@ export default function HomeScreen() {
     let flipTimeout: NodeJS.Timeout;
   
     if (isPlaying) {
-      // Function to handle flipping and updating index
+      // Function to handle flipping to the answer and then back
       const handleCardFlipAndIndexUpdate = () => {
         Animated.sequence([
+          // Flip to show answer
           Animated.timing(flipAnim, {
             toValue: 180,
             duration: 500,
             useNativeDriver: true,
           }),
+          Animated.delay(2000), // Show answer for 2 seconds
+          // Flip back to show question
           Animated.timing(flipAnim, {
             toValue: 0,
             duration: 500,
@@ -147,10 +150,10 @@ export default function HomeScreen() {
         });
       }, 2000); // Show question for 2 seconds
   
-      // Move to the next card after 4 seconds (2 seconds for question, 2 for answer)
+      // Move to the next card after showing the answer and flipping back
       interval = setInterval(() => {
         handleCardFlipAndIndexUpdate();
-      }, 4000); // Autoplay interval (4 seconds total)
+      }, 5000); // Total autoplay interval (5 seconds: 2 seconds for question, 2 for answer, 1 for flipping back)
     }
   
     return () => {
