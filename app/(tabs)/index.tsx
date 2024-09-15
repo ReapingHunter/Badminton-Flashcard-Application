@@ -128,26 +128,47 @@ export default function HomeScreen() {
     let flipTimeout: NodeJS.Timeout;
   
     if (isPlaying) {
+      // Function to handle flipping and updating index
+      const handleCardFlipAndIndexUpdate = () => {
+        Animated.sequence([
+          Animated.timing(flipAnim, {
+            toValue: 180,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(flipAnim, {
+            toValue: 0,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+        ]).start(() => {
+          setShowAnswer(false); // Ensure the next card starts on the question face
+          setIndex(prevIndex => (prevIndex + 1) % cards.length); // Move to the next card
+        });
+      };
+  
       // Initially, show the question for 2 seconds
       flipTimeout = setTimeout(() => {
-        flipCard(); // Flip to show the answer
+        Animated.timing(flipAnim, {
+          toValue: 180,
+          duration: 500,
+          useNativeDriver: true,
+        }).start(() => {
+          setShowAnswer(true); // Show the answer
+        });
       }, 2000); // Show question for 2 seconds
   
       // Move to the next card after 4 seconds (2 seconds for question, 2 for answer)
       interval = setInterval(() => {
-        flipCard(); // Flip back to question first
-        setTimeout(() => {
-          setIndex((prevIndex) => (prevIndex + 1) % cards.length); // Move to the next card
-          setShowAnswer(false); // Ensure the next card starts on the question face
-        }, 500); // Delay before showing the new card
+        handleCardFlipAndIndexUpdate();
       }, 4000); // Autoplay interval (4 seconds total)
     }
-
-      return () => {
-        clearInterval(interval); // Cleanup interval
-        clearTimeout(flipTimeout); // Cleanup timeout for flipping
+  
+    return () => {
+      clearInterval(interval); // Cleanup interval
+      clearTimeout(flipTimeout); // Cleanup timeout for flipping
     };
-  }, [isPlaying, cards]);
+  }, [isPlaying, cards]);  
 
   // Autoplay toggle
   const toggleAutoplay = () => {
