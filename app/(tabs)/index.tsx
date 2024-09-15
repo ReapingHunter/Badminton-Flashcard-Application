@@ -89,26 +89,15 @@ export default function HomeScreen() {
 
   // Flip animation function
   const flipCard = () => {
-    if (flipToFront.current) {
-      Animated.timing(flipAnim, {
-        toValue: 180,
-        duration: 500,
-        useNativeDriver: true,
-      }).start(() => {
-        flipToFront.current = false;
-        setShowAnswer(true);
-      });
-    } else {
-      Animated.timing(flipAnim, {
-        toValue: 0,
-        duration: 500,
-        useNativeDriver: true,
-      }).start(() => {
-        flipToFront.current = true;
-        setShowAnswer(false);
-      });
-    }
-  };
+    Animated.timing(flipAnim, {
+      toValue: flipToFront.current ? 180 : 0,
+      duration: 500,
+      useNativeDriver: true,
+    }).start(() => {
+      flipToFront.current = !flipToFront.current;
+      setShowAnswer(!flipToFront.current);
+    });
+  };  
 
   // Shuffle function (Fisher-Yates algorithm)
   const shuffleCards = () => {
