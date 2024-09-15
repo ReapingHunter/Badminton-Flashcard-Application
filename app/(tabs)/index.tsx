@@ -89,26 +89,15 @@ export default function HomeScreen() {
 
   // Flip animation function
   const flipCard = () => {
-    if (flipToFront.current) {
-      Animated.timing(flipAnim, {
-        toValue: 180,
-        duration: 500,
-        useNativeDriver: true,
-      }).start(() => {
-        flipToFront.current = false;
-        setShowAnswer(true);
-      });
-    } else {
-      Animated.timing(flipAnim, {
-        toValue: 0,
-        duration: 500,
-        useNativeDriver: true,
-      }).start(() => {
-        flipToFront.current = true;
-        setShowAnswer(false);
-      });
-    }
-  };
+    Animated.timing(flipAnim, {
+      toValue: flipToFront.current ? 180 : 0,
+      duration: 500,
+      useNativeDriver: true,
+    }).start(() => {
+      flipToFront.current = !flipToFront.current;
+      setShowAnswer(!flipToFront.current);
+    });
+  };  
 
   // Shuffle function (Fisher-Yates algorithm)
   const shuffleCards = () => {
@@ -128,26 +117,50 @@ export default function HomeScreen() {
     let flipTimeout: NodeJS.Timeout;
   
     if (isPlaying) {
+      // Function to handle flipping to the answer and then back
+      const handleCardFlipAndIndexUpdate = () => {
+        Animated.sequence([
+          // Flip to show answer
+          Animated.timing(flipAnim, {
+            toValue: 180,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.delay(2000), // Show answer for 2 seconds
+          // Flip back to show question
+          Animated.timing(flipAnim, {
+            toValue: 0,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+        ]).start(() => {
+          setShowAnswer(false); // Ensure the next card starts on the question face
+          setIndex(prevIndex => (prevIndex + 1) % cards.length); // Move to the next card
+        });
+      };
+  
       // Initially, show the question for 2 seconds
       flipTimeout = setTimeout(() => {
-        flipCard(); // Flip to show the answer
+        Animated.timing(flipAnim, {
+          toValue: 180,
+          duration: 500,
+          useNativeDriver: true,
+        }).start(() => {
+          setShowAnswer(true); // Show the answer
+        });
       }, 2000); // Show question for 2 seconds
   
-      // Move to the next card after 4 seconds (2 seconds for question, 2 for answer)
+      // Move to the next card after showing the answer and flipping back
       interval = setInterval(() => {
-        flipCard(); // Flip back to question first
-        setTimeout(() => {
-          setIndex((prevIndex) => (prevIndex + 1) % cards.length); // Move to the next card
-          setShowAnswer(false); // Ensure the next card starts on the question face
-        }, 500); // Delay before showing the new card
-      }, 4000); // Autoplay interval (4 seconds total)
+        handleCardFlipAndIndexUpdate();
+      }, 5000); // Total autoplay interval (5 seconds: 2 seconds for question, 2 for answer, 1 for flipping back)
     }
-
-      return () => {
-        clearInterval(interval); // Cleanup interval
-        clearTimeout(flipTimeout); // Cleanup timeout for flipping
+  
+    return () => {
+      clearInterval(interval); // Cleanup interval
+      clearTimeout(flipTimeout); // Cleanup timeout for flipping
     };
-  }, [isPlaying, cards]);
+  }, [isPlaying, cards]);  
 
   // Autoplay toggle
   const toggleAutoplay = () => {
