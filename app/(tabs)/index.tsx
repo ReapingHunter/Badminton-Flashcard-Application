@@ -1,6 +1,11 @@
 import { StyleSheet, Text, View, StatusBar, Button, Pressable, PanResponder, Animated, } from 'react-native';
 import React, {useState, useEffect, useRef} from 'react';
 import { ActionButton } from '@/components/ActionButton';
+import { Autoplay } from '@/utils/Autoplay';
+import { Flashcard } from '@/components/FlashCard';
+import { Instruction } from '@/components/Instructions';
+import { PageIndicator } from '@/components/PageIndicator';
+import { Shuffle } from '@/utils/Shuffle';
 
 type FlashcardData = {
   question: string,
@@ -29,26 +34,6 @@ export default function HomeScreen() {
   const flipToFront = useRef(true);
   const instructionY = useRef(new Animated.Value(100)).current
 
-  useEffect(() => {
-    const animateInstruction = () => {
-      Animated.sequence([
-        Animated.timing(instructionY, {
-          toValue: 0,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.delay(5000), // Wait for 5 seconds
-        Animated.timing(instructionY, {
-          toValue: 100,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    };
-
-    animateInstruction();
-  }, []);
-
   // Flip animation function
   const flipCard = (duration: number) => {
     Animated.timing(flipAnim, {
@@ -67,16 +52,6 @@ export default function HomeScreen() {
       useNativeDriver: true,
     }).start(callback)
   }
-
-  // Interpolations for flip animations
-  const frontInterpolate = flipAnim.interpolate({
-    inputRange: [0, 180],
-    outputRange: ['0deg', '180deg'],
-  });
-  const backInterpolate = flipAnim.interpolate({
-    inputRange: [0, 180],
-    outputRange: ['180deg', '360deg'],
-  });
 
   const handleSwipe = useRef(
     PanResponder.create({
@@ -118,79 +93,30 @@ export default function HomeScreen() {
     })
   ).current
 
-  // Shuffle function (Fisher-Yates algorithm)
+  
   const shuffleCards = () => {
-  const shuffled = [...cards];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
+    const shuffled = Shuffle(cards)
     setCards(shuffled);
     setIndex(0); // Reset to first card after shuffle
     setIsPlaying(false)
-  };
-
-  // Autoplay functionality
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    let timeout: NodeJS.Timeout
-    const animateAutoplay = () => {
-      // Start flip animation
-      Animated.sequence([
-        Animated.timing(flipAnim, {
-          toValue: 180,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.delay(3000), // Wait for 3 seconds after flipping
-        Animated.timing(translateX, {
-          toValue: -500,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        // Flip back to the front side
-        Animated.timing(flipAnim, {
-          toValue: 0,
-          duration: 0,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        if(isPlaying){
-          setIndex((prevIndex) => (prevIndex < cards.length - 1 ? prevIndex + 1 : 0));
-          translateX.setValue(500)
-          Animated.timing(translateX, {
-            toValue: 0,
-            duration: 200,
-            useNativeDriver: true,
-          }).start()
-        }
-        
-      });
+    if(!flipToFront.current){
+      flipCard(0)
     }
-    if (isPlaying) {
-      timeout = setTimeout(() => {
-        animateAutoplay()
-        interval = setInterval(() => {
-          animateAutoplay()
-        }, 7000);
-      }, 3500)
-    }
-    return () => {
-      clearInterval(interval); // Cleanup interval
-      clearTimeout(timeout)
-    };
-  }, [isPlaying, cards]);  
-
-  // Autoplay toggle
-  const toggleAutoplay = () => {
-    setIsPlaying(!isPlaying);
-  };
+  }
+  
 
   return (
     <View style={styles.body}>
       <StatusBar 
         backgroundColor="#000000"
         barStyle="light-content"
+      />
+      <Autoplay
+        isPlaying={isPlaying}
+        cards={cards}
+        flipAnim={flipAnim}
+        translateX={translateX}
+        setIndex={setIndex}
       />
       <View style={styles.header}>
         <Text style={styles.title}>Badminton Flashcards</Text>
@@ -199,32 +125,22 @@ export default function HomeScreen() {
         <View style={styles.page}>
           <Text style={styles.pageNum}>{index + 1} / {cards.length}</Text>
         </View>
-        <View style={styles.pageIndicator}>
-          {cards.map((_, idx) => (
-            <View
-              key={idx}
-              style={[
-                styles.dot,
-                { backgroundColor: index === idx ? '#1955ff' : '#d3d3d3' }
-              ]}
-            />
-          ))}
-        </View>
+        <PageIndicator
+          cards={cards}
+          currentIndex={index}/>
         <Animated.View  {...handleSwipe.panHandlers} style={{transform: [{translateX}]}}>
-          <Pressable onPress={() => flipCard(500)}>
-            <Animated.View style={[styles.flashcard, { transform: [{ rotateX: frontInterpolate }] }]}>
-              <Text style={styles.questionText}>{cards[index].question}</Text>
-            </Animated.View>
-            <Animated.View style={[styles.flashcard, styles.flashcardBack, { transform: [{ rotateX: backInterpolate }] }]}>
-              <Text style={styles.answerText}>{cards[index].answer}</Text>
-            </Animated.View>
-          </Pressable>
+        <Flashcard
+          question={cards[index].question}
+          answer={cards[index].answer}
+          flipAnim={flipAnim}
+          flipCard={flipCard}
+        />
         </Animated.View>
         <View style={styles.horizontalLine} />
         <View style={styles.actions}>
           <ActionButton
             style={isPlaying ? styles.playingButton : styles.iconButton}
-            onPress={toggleAutoplay}
+            onPress={() => setIsPlaying(!isPlaying)}
             iconName={isPlaying ? "pause" : "play"}
             color={isPlaying ? "#1955ff" : "white"}>
           </ActionButton>
@@ -236,9 +152,9 @@ export default function HomeScreen() {
           </ActionButton>
         </View>
       </View>
-      <Animated.View style={[styles.instruction, { transform: [{ translateY: instructionY }] }]}>
-        <Text style={styles.instructionText}>Tap on the flashcard to flip. Swipe to go to the next or previous flashcard</Text>
-      </Animated.View>
+      <Instruction 
+        instructionY={instructionY}
+        text="Tap on the flashcard to flip. Swipe to go to the next or previous flashcard" />
     </View>
   );
 }
@@ -284,35 +200,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  flashcard: {
-    backgroundColor: "white",
-    height: 280,
-    width: 335,
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 10,
-    margin: 10,
-    borderStyle: "solid",
-    borderColor: "#3066ff",
-    borderWidth: 5,
-    padding: 20,
-    backfaceVisibility: "hidden",
-  },
-  flashcardBack: {
-    position: "absolute",
-    top: 0,
-    backfaceVisibility: "hidden",
-  },
-  questionText: {
-    fontSize: 18,
-    textAlign: 'center',
-    margin: 10,
-  },
-  answerText: {
-    fontSize: 18,
-    textAlign: 'center',
-    margin: 10,
-  },
   actions: {
     height: "20%",
     width: "90%",
@@ -345,29 +232,4 @@ const styles = StyleSheet.create({
     backgroundColor: '#9c9c9c',
     marginVertical: 20,
   },
-  pageIndicator: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    margin: 3,
-  },
-  instruction: {
-    backgroundColor: "#0030b6",
-    bottom: 0,
-    width: "100%",
-    height: "3%",
-    alignItems: "center",
-    padding: 5,
-    position: "absolute",
-
-  },
-  instructionText: {
-    fontSize: 12,
-    color: "white",
-  }
 });
