@@ -67,8 +67,12 @@ export default function HomeScreen() {
               useNativeDriver: true,
             }).start();
           })
+        } else {
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
         }
-        setShowAnswer(false)
       },
     })
   ).current
