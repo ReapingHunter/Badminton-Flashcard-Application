@@ -1,17 +1,12 @@
 import { StyleSheet, Text, View, StatusBar, Button, Pressable, PanResponder, Animated, } from 'react-native';
 import React, {useState, useEffect, useRef} from 'react';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { ActionButton } from '@/components/ActionButton';
 
 type FlashcardData = {
   question: string,
   answer: string,
 }[];
-interface ActionButtonProps {
-  style: any;
-  onPress: () => void;
-  iconName: keyof typeof Ionicons.glyphMap;
-  color: string;
-}
+
 const data : FlashcardData = [
   {question: "A stroke made on the nonracquet side of the body", answer: "Backhand"},
   {question: "Any infraction of the rules which results in the loss of a serve or in a point for the server", answer: "Fault"},
@@ -28,64 +23,55 @@ const data : FlashcardData = [
 export default function HomeScreen() {
   const [index, setIndex] = useState(0)
   const [showAnswer, setShowAnswer] = useState(false)
-  const [cards, setCards] = useState<FlashcardData>(data);  // Holds flashcard data
-  const [isPlaying, setIsPlaying] = useState(false);        // Controls autoplay
-  const scale = useRef(new Animated.Value(1)).current;
+  const [cards, setCards] = useState<FlashcardData>(data);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const translateX = useRef(new Animated.Value(0)).current;
+  const flipAnim = useRef(new Animated.Value(0)).current;
+  const flipToFront = useRef(true);
 
   const handleSwipe = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (evt, gestureState) => {
         return Math.abs(gestureState.dx) > 20
       },
+      onPanResponderMove: (evt, gestureState) => {
+        translateX.setValue(gestureState.dx);
+      },
       onPanResponderRelease: (evt, gestureState) => {
         if (gestureState.dx > 50) {
-          setIndex(prevIndex => (prevIndex > 0 ? prevIndex - 1 : data.length - 1))
+          Animated.timing(translateX, {
+            toValue: 500, // Animate off-screen to the right
+            duration: 200,
+            useNativeDriver: true,
+          }).start(() => {
+            setIndex(prevIndex => (prevIndex > 0 ? prevIndex - 1 : data.length - 1))
+            translateX.setValue(-500)
+            Animated.timing(translateX, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }).start()
+          })
+          
         } else if (gestureState.dx < -50) {
-          setIndex(prevIndex => (prevIndex < data.length - 1 ? prevIndex + 1 : 0))
+          Animated.timing(translateX, {
+            toValue: -500, // Animate off-screen to the right
+            duration: 200,
+            useNativeDriver: true,
+          }).start(() => {
+            setIndex(prevIndex => (prevIndex < data.length - 1 ? prevIndex + 1 : 0))
+            translateX.setValue(500); // Reset position off-screen to the left
+            Animated.timing(translateX, {
+              toValue: 0, // Animate card back into view
+              duration: 200,
+              useNativeDriver: true,
+            }).start();
+          })
         }
         setShowAnswer(false)
       },
     })
   ).current
-
-  const ActionButton = ({ style, onPress, iconName, color }: ActionButtonProps) => {
-    const scale = useRef(new Animated.Value(1)).current;
-
-    const animateButtonPressIn = () => {
-      Animated.spring(scale, {
-        toValue: 0.9, // Scale down to 90%
-        friction: 5,
-        tension: 150,
-        useNativeDriver: true,
-      }).start();
-    };
-
-    const animateButtonPressOut = () => {
-      Animated.spring(scale, {
-        toValue: 1, // Scale back to original size
-        friction: 5,
-        tension: 150,
-        useNativeDriver: true,
-      }).start();
-    };
-
-    return (
-      <Animated.View style={{ transform: [{ scale }] }}>
-        <Pressable
-          style={style}
-          onPress={onPress}
-          onPressIn={animateButtonPressIn}
-          onPressOut={animateButtonPressOut}
-        >
-          <Ionicons name={iconName} size={60} color={color} />
-        </Pressable>
-      </Animated.View>
-    );
-  };
-
-  // Animated value for flip
-  const flipAnim = useRef(new Animated.Value(0)).current;
-  const flipToFront = useRef(true); // Keeps track of flip direction
 
   // Interpolations for flip animations
   const frontInterpolate = flipAnim.interpolate({
@@ -188,8 +174,8 @@ export default function HomeScreen() {
             />
           ))}
         </View>
-        <View  {...handleSwipe.panHandlers}>
-          <Pressable onPress={flipCard} >
+        <Animated.View  {...handleSwipe.panHandlers} style={{transform: [{translateX}]}}>
+          <Pressable onPress={flipCard}>
             <Animated.View style={[styles.flashcard, { transform: [{ rotateX: frontInterpolate }] }]}>
               <Text style={styles.questionText}>{cards[index].question}</Text>
             </Animated.View>
@@ -197,7 +183,7 @@ export default function HomeScreen() {
               <Text style={styles.answerText}>{cards[index].answer}</Text>
             </Animated.View>
           </Pressable>
-        </View>
+        </Animated.View>
         <View style={styles.horizontalLine} />
         <View style={styles.actions}>
           <ActionButton
@@ -220,7 +206,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   header: {
-    backgroundColor: "#9cec7f",
+    backgroundColor: "#3e752b",
     width: "100%",
     height: "20%",
     justifyContent: "flex-end",
@@ -229,8 +215,8 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   title: {
-    color: "#3e752b",
-    fontWeight: "bold",
+    color: "#ffffff",
+    fontWeight: "300",
     fontSize: 25,
     marginBottom: 35,
   },
@@ -319,10 +305,6 @@ const styles = StyleSheet.create({
     height: 0.75,
     backgroundColor: '#9c9c9c',
     marginVertical: 20,
-  },
-  flashcardContainer: {
-    width: "100%",
-    alignItems: "center",
   },
   pageIndicator: {
     flexDirection: "row",
