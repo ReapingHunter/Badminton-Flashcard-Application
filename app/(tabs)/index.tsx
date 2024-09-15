@@ -22,60 +22,51 @@ const data : FlashcardData = [
 
 export default function HomeScreen() {
   const [index, setIndex] = useState(0)
-  const [showAnswer, setShowAnswer] = useState(false)
   const [cards, setCards] = useState<FlashcardData>(data);
   const [isPlaying, setIsPlaying] = useState(false);
   const translateX = useRef(new Animated.Value(0)).current;
   const flipAnim = useRef(new Animated.Value(0)).current;
   const flipToFront = useRef(true);
+  const instructionY = useRef(new Animated.Value(100)).current
 
-  const handleSwipe = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (evt, gestureState) => {
-        return Math.abs(gestureState.dx) > 20
-      },
-      onPanResponderMove: (evt, gestureState) => {
-        translateX.setValue(gestureState.dx);
-      },
-      onPanResponderRelease: (evt, gestureState) => {
-        if (gestureState.dx > 50) {
-          Animated.timing(translateX, {
-            toValue: 500, // Animate off-screen to the right
-            duration: 200,
-            useNativeDriver: true,
-          }).start(() => {
-            setIndex(prevIndex => (prevIndex > 0 ? prevIndex - 1 : data.length - 1))
-            translateX.setValue(-500)
-            Animated.timing(translateX, {
-              toValue: 0,
-              duration: 200,
-              useNativeDriver: true,
-            }).start()
-          })
-          
-        } else if (gestureState.dx < -50) {
-          Animated.timing(translateX, {
-            toValue: -500, // Animate off-screen to the right
-            duration: 200,
-            useNativeDriver: true,
-          }).start(() => {
-            setIndex(prevIndex => (prevIndex < data.length - 1 ? prevIndex + 1 : 0))
-            translateX.setValue(500); // Reset position off-screen to the left
-            Animated.timing(translateX, {
-              toValue: 0, // Animate card back into view
-              duration: 200,
-              useNativeDriver: true,
-            }).start();
-          })
-        } else {
-          Animated.spring(translateX, {
-            toValue: 0,
-            useNativeDriver: true,
-          }).start();
-        }
-      },
-    })
-  ).current
+  useEffect(() => {
+    const animateInstruction = () => {
+      Animated.sequence([
+        Animated.timing(instructionY, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.delay(5000), // Wait for 5 seconds
+        Animated.timing(instructionY, {
+          toValue: 100,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    };
+
+    animateInstruction();
+  }, []);
+
+  // Flip animation function
+  const flipCard = (duration: number) => {
+    Animated.timing(flipAnim, {
+      toValue: flipToFront.current ? 180 : 0,
+      duration: duration,
+      useNativeDriver: true,
+    }).start(() => {
+      flipToFront.current = !flipToFront.current;
+    });
+  }; 
+  // Swipe animation function
+  const swipeCard = (value: number, duration: number, callback: () => void) => {
+    Animated.timing(translateX, {
+      toValue: value,
+      duration: duration,
+      useNativeDriver: true,
+    }).start(callback)
+  }
 
   // Interpolations for flip animations
   const frontInterpolate = flipAnim.interpolate({
@@ -87,17 +78,45 @@ export default function HomeScreen() {
     outputRange: ['180deg', '360deg'],
   });
 
-  // Flip animation function
-  const flipCard = () => {
-    Animated.timing(flipAnim, {
-      toValue: flipToFront.current ? 180 : 0,
-      duration: 500,
-      useNativeDriver: true,
-    }).start(() => {
-      flipToFront.current = !flipToFront.current;
-      setShowAnswer(!flipToFront.current);
-    });
-  };  
+  const handleSwipe = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        setIsPlaying(false)
+        return Math.abs(gestureState.dx) > 20
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        setIsPlaying(false)
+        translateX.setValue(gestureState.dx);
+      },
+      onPanResponderRelease: (evt, gestureState) => {
+        setIsPlaying(false)
+        if (gestureState.dx > 50) {
+          swipeCard(500, 200, () => {
+            setIndex((prevIndex) => (prevIndex > 0 ? prevIndex - 1 : data.length - 1))
+            if(!flipToFront.current){
+              flipCard(0)
+            }
+            translateX.setValue(-500)
+            swipeCard(0, 200, ()=>{})
+          })
+        } else if (gestureState.dx < -50) {
+          swipeCard(-500, 200, () => {
+            setIndex(prevIndex => (prevIndex < data.length - 1 ? prevIndex + 1 : 0))
+            if(!flipToFront.current){
+              flipCard(0)
+            }
+            translateX.setValue(500);
+            swipeCard(0, 200, ()=>{})
+          })
+        } else {
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    })
+  ).current
 
   // Shuffle function (Fisher-Yates algorithm)
   const shuffleCards = () => {
@@ -108,63 +127,63 @@ export default function HomeScreen() {
     }
     setCards(shuffled);
     setIndex(0); // Reset to first card after shuffle
-    setShowAnswer(false); // Reset to question side
+    setIsPlaying(false)
   };
 
   // Autoplay functionality
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    let flipTimeout: NodeJS.Timeout;
-  
-    if (isPlaying) {
-      // Function to handle flipping to the answer and then back
-      const handleCardFlipAndIndexUpdate = () => {
-        Animated.sequence([
-          // Flip to show answer
-          Animated.timing(flipAnim, {
-            toValue: 180,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-          Animated.delay(2000), // Show answer for 2 seconds
-          // Flip back to show question
-          Animated.timing(flipAnim, {
-            toValue: 0,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-        ]).start(() => {
-          setShowAnswer(false); // Ensure the next card starts on the question face
-          setIndex(prevIndex => (prevIndex + 1) % cards.length); // Move to the next card
-        });
-      };
-  
-      // Initially, show the question for 2 seconds
-      flipTimeout = setTimeout(() => {
+    let timeout: NodeJS.Timeout
+    const animateAutoplay = () => {
+      // Start flip animation
+      Animated.sequence([
         Animated.timing(flipAnim, {
           toValue: 180,
           duration: 500,
           useNativeDriver: true,
-        }).start(() => {
-          setShowAnswer(true); // Show the answer
-        });
-      }, 2000); // Show question for 2 seconds
-  
-      // Move to the next card after showing the answer and flipping back
-      interval = setInterval(() => {
-        handleCardFlipAndIndexUpdate();
-      }, 5000); // Total autoplay interval (5 seconds: 2 seconds for question, 2 for answer, 1 for flipping back)
+        }),
+        Animated.delay(3000), // Wait for 3 seconds after flipping
+        Animated.timing(translateX, {
+          toValue: -500,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        // Flip back to the front side
+        Animated.timing(flipAnim, {
+          toValue: 0,
+          duration: 0,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        if(isPlaying){
+          setIndex((prevIndex) => (prevIndex < cards.length - 1 ? prevIndex + 1 : 0));
+          translateX.setValue(500)
+          Animated.timing(translateX, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }).start()
+        }
+        
+      });
     }
-  
+    if (isPlaying) {
+      timeout = setTimeout(() => {
+        animateAutoplay()
+        interval = setInterval(() => {
+          animateAutoplay()
+        }, 7000);
+      }, 3500)
+    }
     return () => {
       clearInterval(interval); // Cleanup interval
-      clearTimeout(flipTimeout); // Cleanup timeout for flipping
+      clearTimeout(timeout)
     };
   }, [isPlaying, cards]);  
 
   // Autoplay toggle
   const toggleAutoplay = () => {
-    setIsPlaying((prev) => !prev);
+    setIsPlaying(!isPlaying);
   };
 
   return (
@@ -186,13 +205,13 @@ export default function HomeScreen() {
               key={idx}
               style={[
                 styles.dot,
-                { backgroundColor: index === idx ? '#3e752b' : '#d3d3d3' }
+                { backgroundColor: index === idx ? '#1955ff' : '#d3d3d3' }
               ]}
             />
           ))}
         </View>
         <Animated.View  {...handleSwipe.panHandlers} style={{transform: [{translateX}]}}>
-          <Pressable onPress={flipCard}>
+          <Pressable onPress={() => flipCard(500)}>
             <Animated.View style={[styles.flashcard, { transform: [{ rotateX: frontInterpolate }] }]}>
               <Text style={styles.questionText}>{cards[index].question}</Text>
             </Animated.View>
@@ -207,7 +226,7 @@ export default function HomeScreen() {
             style={isPlaying ? styles.playingButton : styles.iconButton}
             onPress={toggleAutoplay}
             iconName={isPlaying ? "pause" : "play"}
-            color={isPlaying ? "#3e752b" : "white"}>
+            color={isPlaying ? "#1955ff" : "white"}>
           </ActionButton>
           <ActionButton
             style={styles.iconButton}
@@ -217,13 +236,16 @@ export default function HomeScreen() {
           </ActionButton>
         </View>
       </View>
+      <Animated.View style={[styles.instruction, { transform: [{ translateY: instructionY }] }]}>
+        <Text style={styles.instructionText}>Tap on the flashcard to flip. Swipe to go to the next or previous flashcard</Text>
+      </Animated.View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   header: {
-    backgroundColor: "#3e752b",
+    backgroundColor: "#1955ff",
     width: "100%",
     height: "20%",
     justifyContent: "flex-end",
@@ -234,7 +256,7 @@ const styles = StyleSheet.create({
   title: {
     color: "#ffffff",
     fontWeight: "300",
-    fontSize: 25,
+    fontSize: 32,
     marginBottom: 35,
   },
   body: {
@@ -271,7 +293,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     margin: 10,
     borderStyle: "solid",
-    borderColor: "#3e752b",
+    borderColor: "#3066ff",
     borderWidth: 5,
     padding: 20,
     backfaceVisibility: "hidden",
@@ -299,7 +321,7 @@ const styles = StyleSheet.create({
     margin:10,
   },
   iconButton: {
-    backgroundColor: "#3e752b",
+    backgroundColor: "#1955ff",
     borderRadius: 80,
     height: 80,
     width: 80,
@@ -314,7 +336,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderStyle: "solid",
-    borderColor: "#3e752b",
+    borderColor: "#1955ff",
     borderWidth: 2,
   },
   horizontalLine: {
@@ -334,4 +356,18 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     margin: 3,
   },
+  instruction: {
+    backgroundColor: "#0030b6",
+    bottom: 0,
+    width: "100%",
+    height: "3%",
+    alignItems: "center",
+    padding: 5,
+    position: "absolute",
+
+  },
+  instructionText: {
+    fontSize: 12,
+    color: "white",
+  }
 });
