@@ -1,53 +1,30 @@
 import { StyleSheet, Text, View, StatusBar, Button, Pressable, PanResponder, Animated } from 'react-native';
+import React, {useState, useEffect, useRef} from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useRef, useState } from 'react';
 
-const data = [
-  {
-    question: "A stroke made on the nonracquet side of the body",
-    answer: "Backhand",
-  },
-  {
-    question: "Any infraction of the rules which results in the loss of a serve or in a point for the server",
-    answer: "Fault",
-  },
-  {
-    question: "The object which is volleyed back and forth over the net",
-    answer: "Shuttlecock",
-  },
-  {
-    question: "An overhead stroke hit downward with great velocity and angle",
-    answer: "Smash",
-  },
-  {
-    question: "If the shuttle hits the net and still lands in the proper court is it a Legal or Illegal serve?",
-    answer: "Legal",
-  },
-  {
-    question: "When is the serve in singles made from the right service court?",
-    answer: "When the server's score is an even number",
-  },
-  {
-    question: "What are the 5 basic groups of shots?",
-    answer: "serves, clears, smash, blocks, drop shots",
-  },
-  {
-    question: "What is the mid-line separating the service courts?",
-    answer: "Center line",
-  },
-  {
-    question: "A high, deep serve landing near the long service line in doubles or back boundary line in singles",
-    answer: "Long Serve",
-  },
-  {
-    question: "Badminton became an olympic sport in what year?",
-    answer: "1992",
-  }
+type FlashcardData = {
+  question: string,
+  answer: string,
+}[];
+
+const data : FlashcardData = [
+  {question: "A stroke made on the nonracquet side of the body", answer: "Backhand"},
+  {question: "Any infraction of the rules which results in the loss of a serve or in a point for the server", answer: "Fault"},
+  {question: "The object which is volleyed back and forth over the net", answer: "Shuttlecock"},
+  {question: "An overhead stroke hit downward with great velocity and angle", answer: "Smash"},
+  {question: "If the shuttle hits the net and still lands in the proper court is it a Legal or Illegal serve?", answer: "Legal"},
+  {question: "When is the serve in singles made from the right service court?", answer: "When the server's score is an even number"},
+  {question: "What are the 5 basic groups of shots?", answer: "serves, clears, smash, blocks, drop shots"},
+  {question: "What is the mid-line separating the service courts?", answer: "Center line"},
+  {question: "A high, deep serve landing near the long service line in doubles or back boundary line in singles", answer: "Long Serve",},
+  {question: "Badminton became an olympic sport in what year?",answer: "1992"}
 ]
 
 export default function HomeScreen() {
   const [index, setIndex] = useState(0)
   const [showAnswer, setShowAnswer] = useState(false)
+  const [cards, setCards] = useState<FlashcardData>(data);  // Holds flashcard data
+  const [isPlaying, setIsPlaying] = useState(false);        // Controls autoplay
 
   const handleSwipe = useRef(
     PanResponder.create({
@@ -65,6 +42,90 @@ export default function HomeScreen() {
     })
   ).current
 
+
+
+  
+  // Animated value for flip
+  const flipAnim = useRef(new Animated.Value(0)).current;
+  const flipToFront = useRef(true); // Keeps track of flip direction
+
+  // Interpolations for flip animations
+  const frontInterpolate = flipAnim.interpolate({
+    inputRange: [0, 180],
+    outputRange: ['0deg', '180deg'],
+  });
+  const backInterpolate = flipAnim.interpolate({
+    inputRange: [0, 180],
+    outputRange: ['180deg', '360deg'],
+  });
+
+  // Flip animation function
+  const flipCard = () => {
+    if (flipToFront.current) {
+      Animated.timing(flipAnim, {
+        toValue: 180,
+        duration: 500,
+        useNativeDriver: true,
+      }).start(() => {
+        flipToFront.current = false;
+        setShowAnswer(true);
+      });
+    } else {
+      Animated.timing(flipAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }).start(() => {
+        flipToFront.current = true;
+        setShowAnswer(false);
+      });
+    }
+  };
+
+  // Shuffle function (Fisher-Yates algorithm)
+  const shuffleCards = () => {
+  const shuffled = [...cards];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    setCards(shuffled);
+    setIndex(0); // Reset to first card after shuffle
+    setShowAnswer(false); // Reset to question side
+  };
+
+  // Autoplay functionality
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    let flipTimeout: NodeJS.Timeout;
+  
+    if (isPlaying) {
+      // Initially, show the question for 2 seconds
+      flipTimeout = setTimeout(() => {
+        flipCard(); // Flip to show the answer
+      }, 2000); // Show question for 2 seconds
+  
+      // Move to the next card after 4 seconds (2 seconds for question, 2 for answer)
+      interval = setInterval(() => {
+        flipCard(); // Flip back to question first
+        setTimeout(() => {
+          setIndex((prevIndex) => (prevIndex + 1) % cards.length); // Move to the next card
+          setShowAnswer(false); // Ensure the next card starts on the question face
+        }, 500); // Delay before showing the new card
+      }, 4000); // Autoplay interval (4 seconds total)
+    }
+
+      return () => {
+        clearInterval(interval); // Cleanup interval
+        clearTimeout(flipTimeout); // Cleanup timeout for flipping
+    };
+  }, [isPlaying, cards]);
+
+  // Autoplay toggle
+  const toggleAutoplay = () => {
+    setIsPlaying((prev) => !prev);
+  };
+
   return (
     <View style={styles.body}>
       <StatusBar 
@@ -76,21 +137,26 @@ export default function HomeScreen() {
       </View>
       <View style={styles.container}>
         <View style={styles.page}>
-            <Text style={styles.pageNum}>{index + 1} / {data.length}</Text>
+          <Text style={styles.pageNum}>{index + 1} / {cards.length}</Text>
         </View>
-        <View {...handleSwipe.panHandlers} >
-          <Pressable onPress={() => {setShowAnswer(!showAnswer)}} style={styles.flashcard}>
-            <Text>{!showAnswer ? data[index].question : data[index].answer}</Text>
+        <View  {...handleSwipe.panHandlers}>
+        <Pressable onPress={flipCard} >
+            <Animated.View style={[styles.flashcard, { transform: [{ rotateX: frontInterpolate }] }]}>
+              <Text style={styles.questionText}>{cards[index].question}</Text>
+            </Animated.View>
+            <Animated.View style={[styles.flashcard, styles.flashcardBack, { transform: [{ rotateX: backInterpolate }] }]}>
+              <Text style={styles.answerText}>{cards[index].answer}</Text>
+            </Animated.View>
           </Pressable>
         </View>
         <View style={styles.horizontalLine} />
         <View style={styles.actions}>
-          <Pressable style={styles.iconButton}>
+          <Pressable style={styles.iconButton} onPress={toggleAutoplay}>
             <Ionicons name="play" size={60} color={"white"}/>
           </Pressable>
-          <Pressable style={styles.iconButton}>
+          <Pressable style={styles.iconButton} onPress={shuffleCards}>
             <Ionicons name="shuffle" size={60} color={"white"}/>
-          </Pressable>
+            </Pressable>
         </View>
       </View>
     </View>
@@ -151,6 +217,24 @@ const styles = StyleSheet.create({
     borderColor: "#3e752b",
     borderWidth: 5,
     padding: 20,
+    backfaceVisibility: "hidden",
+  },
+  flashcardBack: {
+    elevation: 8,
+    position: "absolute",
+    top: 0,
+    backfaceVisibility: "hidden",
+  },
+  questionText: {
+    fontSize: 18,
+    textAlign: 'center',
+    margin: 10,
+  },
+  answerText: {
+    fontSize: 18,
+    textAlign: 'center',
+    margin: 10,
+    color: '#d9534f',
   },
   actions: {
     height: "20%",
