@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, StatusBar, Button, Pressable, PanResponder, Animated } from 'react-native';
+import { StyleSheet, Text, View, StatusBar, Button, Pressable, PanResponder, Animated, } from 'react-native';
 import React, {useState, useEffect, useRef} from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
@@ -6,7 +6,12 @@ type FlashcardData = {
   question: string,
   answer: string,
 }[];
-
+interface ActionButtonProps {
+  style: any;
+  onPress: () => void;
+  iconName: keyof typeof Ionicons.glyphMap;
+  color: string;
+}
 const data : FlashcardData = [
   {question: "A stroke made on the nonracquet side of the body", answer: "Backhand"},
   {question: "Any infraction of the rules which results in the loss of a serve or in a point for the server", answer: "Fault"},
@@ -25,6 +30,7 @@ export default function HomeScreen() {
   const [showAnswer, setShowAnswer] = useState(false)
   const [cards, setCards] = useState<FlashcardData>(data);  // Holds flashcard data
   const [isPlaying, setIsPlaying] = useState(false);        // Controls autoplay
+  const scale = useRef(new Animated.Value(1)).current;
 
   const handleSwipe = useRef(
     PanResponder.create({
@@ -42,9 +48,41 @@ export default function HomeScreen() {
     })
   ).current
 
+  const ActionButton = ({ style, onPress, iconName, color }: ActionButtonProps) => {
+    const scale = useRef(new Animated.Value(1)).current;
 
+    const animateButtonPressIn = () => {
+      Animated.spring(scale, {
+        toValue: 0.9, // Scale down to 90%
+        friction: 5,
+        tension: 150,
+        useNativeDriver: true,
+      }).start();
+    };
 
-  
+    const animateButtonPressOut = () => {
+      Animated.spring(scale, {
+        toValue: 1, // Scale back to original size
+        friction: 5,
+        tension: 150,
+        useNativeDriver: true,
+      }).start();
+    };
+
+    return (
+      <Animated.View style={{ transform: [{ scale }] }}>
+        <Pressable
+          style={style}
+          onPress={onPress}
+          onPressIn={animateButtonPressIn}
+          onPressOut={animateButtonPressOut}
+        >
+          <Ionicons name={iconName} size={60} color={color} />
+        </Pressable>
+      </Animated.View>
+    );
+  };
+
   // Animated value for flip
   const flipAnim = useRef(new Animated.Value(0)).current;
   const flipToFront = useRef(true); // Keeps track of flip direction
@@ -139,8 +177,19 @@ export default function HomeScreen() {
         <View style={styles.page}>
           <Text style={styles.pageNum}>{index + 1} / {cards.length}</Text>
         </View>
+        <View style={styles.pageIndicator}>
+          {cards.map((_, idx) => (
+            <View
+              key={idx}
+              style={[
+                styles.dot,
+                { backgroundColor: index === idx ? '#3e752b' : '#d3d3d3' }
+              ]}
+            />
+          ))}
+        </View>
         <View  {...handleSwipe.panHandlers}>
-        <Pressable onPress={flipCard} >
+          <Pressable onPress={flipCard} >
             <Animated.View style={[styles.flashcard, { transform: [{ rotateX: frontInterpolate }] }]}>
               <Text style={styles.questionText}>{cards[index].question}</Text>
             </Animated.View>
@@ -151,12 +200,18 @@ export default function HomeScreen() {
         </View>
         <View style={styles.horizontalLine} />
         <View style={styles.actions}>
-          <Pressable style={styles.iconButton} onPress={toggleAutoplay}>
-            <Ionicons name="play" size={60} color={"white"}/>
-          </Pressable>
-          <Pressable style={styles.iconButton} onPress={shuffleCards}>
-            <Ionicons name="shuffle" size={60} color={"white"}/>
-            </Pressable>
+          <ActionButton
+            style={isPlaying ? styles.playingButton : styles.iconButton}
+            onPress={toggleAutoplay}
+            iconName={isPlaying ? "pause" : "play"}
+            color={isPlaying ? "#3e752b" : "white"}>
+          </ActionButton>
+          <ActionButton
+            style={styles.iconButton}
+            onPress={shuffleCards}
+            iconName={"shuffle"}
+            color={"white"}>
+          </ActionButton>
         </View>
       </View>
     </View>
@@ -211,7 +266,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 10,
-    elevation: 8,
     margin: 10,
     borderStyle: "solid",
     borderColor: "#3e752b",
@@ -220,7 +274,6 @@ const styles = StyleSheet.create({
     backfaceVisibility: "hidden",
   },
   flashcardBack: {
-    elevation: 8,
     position: "absolute",
     top: 0,
     backfaceVisibility: "hidden",
@@ -234,7 +287,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
     margin: 10,
-    color: '#d9534f',
   },
   actions: {
     height: "20%",
@@ -251,6 +303,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  playingButton: {
+    backgroundColor: "#eaeaea",
+    borderRadius: 80,
+    height: 80,
+    width: 80,
+    justifyContent: "center",
+    alignItems: "center",
+    borderStyle: "solid",
+    borderColor: "#3e752b",
+    borderWidth: 2,
+  },
   horizontalLine: {
     width: '80%',
     height: 0.75,
@@ -260,5 +323,16 @@ const styles = StyleSheet.create({
   flashcardContainer: {
     width: "100%",
     alignItems: "center",
-  }
+  },
+  pageIndicator: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  dot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    margin: 3,
+  },
 });
