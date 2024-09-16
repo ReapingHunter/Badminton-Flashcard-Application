@@ -142,7 +142,7 @@ export default function HomeScreen() {
             style={isPlaying ? styles.playingButton : styles.iconButton}
             onPress={() => setIsPlaying(!isPlaying)}
             iconName={isPlaying ? "pause" : "play"}
-            color={isPlaying ? "#1955ff" : "white"}>
+            color={isPlaying ? "#0b7fab" : "white"}>
           </ActionButton>
           <ActionButton
             style={styles.iconButton}
@@ -161,7 +161,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   header: {
-    backgroundColor: "#1955ff",
+    backgroundColor: "#0b7fab",
     width: "100%",
     height: "20%",
     justifyContent: "flex-end",
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
     margin:10,
   },
   iconButton: {
-    backgroundColor: "#1955ff",
+    backgroundColor: "#0b7fab",
     borderRadius: 80,
     height: 80,
     width: 80,
@@ -216,14 +216,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   playingButton: {
-    backgroundColor: "#eaeaea",
+    backgroundColor: "#89c4f4",
     borderRadius: 80,
     height: 80,
     width: 80,
     justifyContent: "center",
     alignItems: "center",
     borderStyle: "solid",
-    borderColor: "#1955ff",
+    borderColor: "#0b7fab",
     borderWidth: 2,
   },
   horizontalLine: {
