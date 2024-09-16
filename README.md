@@ -1,7 +1,8 @@
 # Badminton Flashcard Application 👋
 
 A single screen flashcard application with questions and answers relating to badminton.
-
+## Drive for screenshots and video showcasing the app
+https://drive.google.com/drive/u/1/folders/1C89XnNcR80kebzI0_H1zmDKcDb7sfHtu
 ## Get started
 
 1. Install dependencies
