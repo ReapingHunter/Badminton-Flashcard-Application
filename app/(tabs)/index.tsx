@@ -186,7 +186,7 @@ export default function HomeScreen() {
               key={idx}
               style={[
                 styles.dot,
-                { backgroundColor: index === idx ? '#3e752b' : '#d3d3d3' }
+                { backgroundColor: index === idx ? '#0b7fab' : '#d3d3d3' }
               ]}
             />
           ))}
@@ -207,7 +207,7 @@ export default function HomeScreen() {
             style={isPlaying ? styles.playingButton : styles.iconButton}
             onPress={toggleAutoplay}
             iconName={isPlaying ? "pause" : "play"}
-            color={isPlaying ? "#3e752b" : "white"}>
+            color={isPlaying ? "#0b7fab" : "white"}>
           </ActionButton>
           <ActionButton
             style={styles.iconButton}
@@ -223,7 +223,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   header: {
-    backgroundColor: "#3e752b",
+    backgroundColor: "#0b7fab",
     width: "100%",
     height: "20%",
     justifyContent: "flex-end",
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     margin: 10,
     borderStyle: "solid",
-    borderColor: "#3e752b",
+    borderColor: "#0b7fab",
     borderWidth: 5,
     padding: 20,
     backfaceVisibility: "hidden",
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
     margin: 10,
   },
   answerText: {
-    fontSize: 18,
+    fontSize: 20,
     textAlign: 'center',
     margin: 10,
   },
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
     margin:10,
   },
   iconButton: {
-    backgroundColor: "#3e752b",
+    backgroundColor: "#0b7fab",
     borderRadius: 80,
     height: 80,
     width: 80,
@@ -307,14 +307,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   playingButton: {
-    backgroundColor: "#eaeaea",
+    backgroundColor: "#89c4f4",
     borderRadius: 80,
     height: 80,
     width: 80,
     justifyContent: "center",
     alignItems: "center",
     borderStyle: "solid",
-    borderColor: "#3e752b",
+    borderColor: "#0b7fab",
     borderWidth: 2,
   },
   horizontalLine: {
